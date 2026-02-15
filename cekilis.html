@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurullah7 MC - Canlı Senkronize</title>
+    <link rel="icon" type="image/png" href="Giris.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root { --primary: #f1c40f; --success: #2ecc71; --danger: #e74c3c; --bg: #050505; --card: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; } 
+        body { background-color: var(--bg); color: white; font-family: 'Poppins', sans-serif; }
+
+        /* Loader */
+        #loader { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .loader-img { width: 100px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        /* Navbar & Layout */
+        .navbar { padding: 15px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .nav-logo-area { display: flex; align-items: center; gap: 10px; }
+        .nav-logo-img { width: 40px; }
+        
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.05); }
+
+        /* UI */
+        input { width: 100%; padding: 15px; margin-bottom: 10px; background: #000; border: 1px solid var(--border); color: white; border-radius: 12px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        .btn-gold { background: var(--primary); color: #000; }
+        .btn-gold:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2); }
+        
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 10001; }
+        .modal-inner { background: #111; border: 2px solid var(--danger); padding: 30px; border-radius: 20px; text-align: center; max-width: 400px; }
+
+        .giveaway-status { background: rgba(241, 196, 15, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--primary); }
+        .p-item { padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border-left: 4px solid var(--primary); text-align: left; }
+        
+        .admin-zone { border: 1px dashed var(--danger); padding: 20px; margin-top: 20px; border-radius: 15px; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div id="loader"><img src="Giris.png" class="loader-img"><p style="color:var(--primary); margin-top:10px;">CANLI VERİLER ÇEKİLİYOR...</p></div>
+
+<div id="warning-modal" class="modal">
+    <div class="modal-inner">
+        <h3 style="color:var(--danger)">🚨 GÜVENLİK UYARISI</h3>
+        <p style="margin: 15px 0;">Şifre kısmına kendi oyun şifrenizi girmeyiniz. Sorumluluk almayız!</p>
+        <button class="btn-gold" onclick="closeModal()">ANLADIM</button>
+    </div>
+</div>
+
+<nav class="navbar">
+    <div class="nav-logo-area"><img src="Giris.png" class="nav-logo-img"> <h1 style="font-size:1.2rem; color:var(--primary)">NURULLAH7 MC</h1></div>
+    <a href="index.html" style="color:#fff; text-decoration:none; font-size:0.8rem;">← GERİ DÖN</a>
+</nav>
+
+<div class="container">
+    <div class="box" style="text-align:center">
+        <div id="auth-box">
+            <div id="login-ui">
+                <h2>Giriş Yap</h2>
+                <input type="text" id="l-user" placeholder="Kullanıcı Adı">
+                <input type="password" id="l-pass" placeholder="Şifre">
+                <button class="btn-gold" onclick="handleAuth('login')">GİRİŞ</button>
+                <p style="margin-top:15px; font-size:0.8rem">Hesabın yok mu? <span onclick="showRegister(true)" style="color:var(--primary); cursor:pointer">Kayıt Ol</span></p>
+            </div>
+            <div id="reg-ui" class="hidden">
+                <h2>Kayıt Ol</h2>
+                <input type="text" id="r-user" placeholder="Minecraft Adın">
+                <input type="password" id="r-pass" placeholder="Yeni Şifre">
+                <button class="btn-gold" onclick="handleAuth('register')">KAYDOL</button>
+                <p style="margin-top:15px; font-size:0.8rem">Giriş yap? <span onclick="showRegister(false)" style="color:var(--primary); cursor:pointer">Giriş Yap</span></p>
+            </div>
+        </div>
+
+        <div id="game-box" class="hidden">
+            <div class="giveaway-status">
+                <h2 id="draw-title">ÇEKİLİŞ BEKLENİYOR</h2>
+                <p id="draw-info">Henüz bir etkinlik başlatılmadı.</p>
+                <div id="winner-box" class="hidden" style="margin-top:15px; font-weight:900; color:var(--success); font-size:1.5rem"></div>
+            </div>
+            
+            <button id="join-btn" class="btn-gold hidden" onclick="joinDraw()">ÇEKİLİŞE KATIL</button>
+
+            <div id="admin-panel" class="admin-zone hidden">
+                <h4 style="color:var(--danger)">ADMİN KONTROL</h4>
+                <input type="text" id="adm-t" placeholder="Ödül nedir?">
+                <input type="number" id="adm-c" value="1" placeholder="Kazanan sayısı">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                    <button style="background:var(--success)" onclick="startDraw()">BAŞLAT</button>
+                    <button style="background:var(--danger); color:white" onclick="resetDraw()">SIFIRLA</button>
+                    <button style="background:white; grid-column: span 2" onclick="pickWinners()">KAZANANLARI SEÇ</button>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; color:var(--danger); margin-top:20px; font-size:0.8rem">OTURUMU KAPAT</button>
+        </div>
+    </div>
+
+    <div class="box">
+        <h3>KATILIMCILAR (<span id="count" style="color:var(--primary)">0</span>)</h3>
+        <div id="p-list" style="margin-top:20px"></div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ DİKKAT: BURAYI KENDİ BİLGİLERİNLE DOLDURMAZSAN SADECE SENDE GÖZÜKÜR!
+    const firebaseConfig = {
+        apiKey: "AIzaSyBlramLryTi94pOOH691ubVcLod4dt-Yhg",
+        databaseURL: "Dhttps://cekilis-664e9-default-rtdb.firebaseio.com",
+        projectId: "cekilis-664e9",
+        appId: "1:787073540189:web:2880fddd0a9165529e6db4"
+    };
+
+    // Firebase Kontrolü (Hata varsa uyarır)
+    if(firebaseConfig.apiKey.includes("API_KEY")) {
+        console.error("Firebase Ayarları Yapılmamış!");
+    }
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let user = localStorage.getItem('mc_user') || null;
+
+    // CANLI VERİ DİNLEME (Tüm dünyayla senkronize olan kısım burası!)
+    db.ref('giveaway_data').on('value', (snap) => {
+        const data = snap.val() || {};
+        renderUI(data);
+    });
+
+    function renderUI(data) {
+        const title = document.getElementById('draw-title');
+        const info = document.getElementById('draw-info');
+        const joinBtn = document.getElementById('join-btn');
+        const winBox = document.getElementById('winner-box');
+        
+        // Katılımcı Listesi
+        const ps = data.participants ? Object.values(data.participants) : [];
+        document.getElementById('count').innerText = ps.length;
+        document.getElementById('p-list').innerHTML = ps.map(p => `<div class="p-item">👤 ${p}</div>`).reverse().join('');
+
+        if(data.status === 'aktif') {
+            title.innerText = data.award;
+            info.innerText = `${data.winnerCount} Kişi Seçilecek!`;
+            winBox.classList.add('hidden');
+            if(user && user !== 'nurullah7') {
+                joinBtn.classList.toggle('hidden', ps.includes(user));
+            }
+        } else if(data.status === 'bitti') {
+            title.innerText = "ÇEKİLİŞ BİTTİ!";
+            info.innerText = "Kazananlar Tebrikler!";
+            winBox.innerText = "👑 " + data.winners;
+            winBox.classList.remove('hidden');
+            joinBtn.classList.add('hidden');
+        } else {
+            title.innerText = "BEKLENİYOR...";
+            info.innerText = "Admin başlatınca burada ödül görünecek.";
+            joinBtn.classList.add('hidden');
+            winBox.classList.add('hidden');
+        }
+    }
+
+    // AUTH
+    async function handleAuth(mode) {
+        const u = document.getElementById(mode === 'login' ? 'l-user' : 'r-user').value.trim().toLowerCase();
+        const p = document.getElementById(mode === 'login' ? 'l-pass' : 'r-pass').value.trim();
+        
+        if(!u || !p) return alert("Eksik bilgi!");
+
+        if(u === 'nurullah7' && p === 'nurullah987654321') {
+            setUser(u);
+        } else {
+            const snap = await db.ref('users/' + u).get();
+            if(mode === 'register') {
+                if(snap.exists()) return alert("Bu isim alınmış!");
+                await db.ref('users/' + u).set({ pass: p });
+                setUser(u);
+            } else {
+                if(snap.exists() && snap.val().pass === p) setUser(u);
+                else alert("Hatalı giriş!");
+            }
+        }
+    }
+
+    function setUser(u) { localStorage.setItem('mc_user', u); location.reload(); }
+    function logout() { localStorage.removeItem('mc_user'); location.reload(); }
+    function showRegister(show) {
+        document.getElementById('login-ui').classList.toggle('hidden', show);
+        document.getElementById('reg-ui').classList.toggle('hidden', !show);
+        if(show) document.getElementById('warning-modal').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('warning-modal').style.display = 'none'; }
+
+    // ACTIONS
+    function joinDraw() {
+        db.ref('giveaway_data/participants').push(user);
+        alert("Katıldın!");
+    }
+
+    function startDraw() {
+        const award = document.getElementById('adm-t').value;
+        const count = document.getElementById('adm-c').value;
+        db.ref('giveaway_data').update({ status: 'aktif', award: award, winnerCount: count, winners: "" });
+    }
+
+    async function pickWinners() {
+        const snap = await db.ref('giveaway_data/participants').get();
+        if(!snap.exists()) return;
+        const arr = Object.values(snap.val());
+        const count = (await db.ref('giveaway_data/winnerCount').get()).val() || 1;
+        let winners = arr.sort(() => 0.5 - Math.random()).slice(0, count);
+        db.ref('giveaway_data').update({ status: 'bitti', winners: winners.join(' - ') });
+    }
+
+    function resetDraw() {
+        if(confirm("Sıfırlansın mı?")) db.ref('giveaway_data').set({ status: 'beklemede', participants: {}, winners: "" });
+    }
+
+    window.onload = () => {
+        if(user) {
+            document.getElementById('auth-box').classList.add('hidden');
+            document.getElementById('game-box').classList.remove('hidden');
+            if(user === 'nurullah7') document.getElementById('admin-panel').classList.remove('hidden');
+        }
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
+    };
+</script>
+</body>
+</html>
